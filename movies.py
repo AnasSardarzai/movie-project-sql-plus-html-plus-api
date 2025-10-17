@@ -1,8 +1,9 @@
-from storage import storage
 import sys
-
+from storage import storage
+from utils import fetch_movie_data, add_movie, get_stats, generate_website
 
 def command_list_movies():
+    """List all movies in the database."""
     movies = storage.list_movies()
     if not movies:
         print("No movies found.")
@@ -14,53 +15,88 @@ def command_list_movies():
 
 
 def command_add_movie():
-    title = input("Enter movie title: ")
-    storage.add_movie(title)
+    """Add a movie using OMDb API."""
+    title = input("Enter movie title: ").strip()
+    if title:
+        add_movie(title)
+    else:
+        print("Title cannot be empty.")
 
 
 def command_delete_movie():
-    title = input("Enter movie title to delete: ")
-    storage.delete_movie(title)
+    """Delete a movie by title."""
+    title = input("Enter movie title to delete: ").strip()
+    if storage.delete_movie(title):
+        print(f"Deleted '{title}'.")
+    else:
+        print(f"Movie '{title}' not found.")
 
 
 def command_update_movie():
-    title = input("Enter the movie title to update: ")
-    new_title = input("Enter new title (or leave empty): ") or None
-    new_rating = input("Enter new rating (or leave empty): ") or None
-    new_year = input("Enter new year (or leave empty): ") or None
-    storage.update_movie(title, new_title, new_rating, new_year)
+    """Update an existing movie."""
+    title = input("Enter the movie title to update: ").strip()
+    if not title:
+        print("Title cannot be empty.")
+        return
+
+    new_title = input("Enter new title (or leave empty): ").strip() or None
+    new_rating = input("Enter new rating (or leave empty): ").strip() or None
+    new_year = input("Enter new year (or leave empty): ").strip() or None
+
+    if storage.update_movie(title, new_title, new_rating, new_year):
+        print("Movie updated successfully.")
+    else:
+        print("Update failed.")
 
 
 def command_search_movie():
-    keyword = input("Enter keyword to search: ")
+    """Search movies by keyword."""
+    keyword = input("Enter keyword to search: ").strip()
+    if not keyword:
+        print("Keyword cannot be empty.")
+        return
+
     results = storage.search_movie(keyword)
     if not results:
         print("No movies found.")
         return
+
+    print(f"Found {len(results)} movie(s):")
     for title, data in results.items():
         print(f"{title} ({data['year']}): {data['rating']}")
 
 
 def command_sort_movies():
+    """Sort movies by rating (highest first)."""
     sorted_movies = storage.sort_movies_by_rating()
+    if not sorted_movies:
+        print("No movies found.")
+        return
+
+    print("Movies sorted by rating:")
     for title, data in sorted_movies.items():
         print(f"{title} ({data['year']}): {data['rating']}")
 
 
 def command_stats():
-    stats = storage.get_stats()
+    """Show statistics about movies."""
+    stats = get_stats()
     print(f"Total movies: {stats['count']}")
     print(f"Average rating: {stats['average']}")
-    print(f"Best movie: {stats['best_movie']} ({stats['best_rating']})")
-    print(f"Worst movie: {stats['worst_movie']} ({stats['worst_rating']})")
+
+    if stats['best_movies']:
+        print(f"Best movie(s): {', '.join(stats['best_movies'])}")
+    if stats['worst_movies']:
+        print(f"Worst movie(s): {', '.join(stats['worst_movies'])}")
 
 
 def command_generate_website():
-    storage.generate_website()
-    print("Website was generated successfully.")
+    """Generate HTML website from movies."""
+    generate_website()
 
 
 def main():
+    """Main menu loop."""
     while True:
         print("\nMenu:")
         print("0. Exit")
@@ -94,3 +130,7 @@ def main():
             command_generate_website()
         else:
             print("Invalid choice.")
+
+
+if __name__ == "__main__":
+    main()
